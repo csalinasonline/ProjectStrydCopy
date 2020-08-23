@@ -6,6 +6,9 @@
 #define TIMEOUT 10
 #define TIMEOUT_2 1000
 //#define DEBUG_MODE_DISABLED
+#define EQ_1_M 0.005f
+#define EQ_2_B -0.005f
+#define ANALOG_IN_VBATT A0
 
 int led = 13;
 unsigned long current_time;
@@ -17,6 +20,9 @@ float gyro_x, gyro_y, gyro_z;
 float pressure;
 float temperature;
 float humidity;
+float batt_lvl;
+
+float get_batt_lvl(void);
 
 // the setup routine runs once when you press reset:
 void setup() {
@@ -101,11 +107,19 @@ void setup() {
 #endif
 
 #ifdef DEBUG_MODE_DISABLED     
+  Serial1.println("[INIT CHECK], INT_ADC, INT_ADC vbatt initialized.");
+  Serial1.println("[VAL CHECK], INT_ADC, vbatt units: V");   
+#else
+  Serial.println("[INIT CHECK], INT_ADC, INT_ADC vbatt initialized.");
+  Serial.println("[VAL CHECK], INT_ADC, vbatt units: V"); 
+#endif
+
+#ifdef DEBUG_MODE_DISABLED     
   Serial1.println("[HEADER INFO]");  
-  Serial1.println("time, accl_x, accl_y, accl_z, gyro_x, gyro_y, gyro_z, pressure, temp, humidity"); 
+  Serial1.println("time, accl_x, accl_y, accl_z, gyro_x, gyro_y, gyro_z, pressure, temp, humidity, vbatt"); 
 #else
   Serial.println("[HEADER INFO]");  
-  Serial.println("time, accl_x, accl_y, accl_z, gyro_x, gyro_y, gyro_z, pressure, temp, humidity"); 
+  Serial.println("time, accl_x, accl_y, accl_z, gyro_x, gyro_y, gyro_z, pressure, temp, humidity, vbatt"); 
 #endif
   
   // Setup timer
@@ -117,7 +131,8 @@ void setup() {
   // Read slow sensors before loop
   pressure = BARO.readPressure();
   temperature = HTS.readTemperature();
-  humidity    = HTS.readHumidity();
+  humidity = HTS.readHumidity();
+  batt_lvl = get_batt_lvl();
 }
 
 // the loop routine runs over and over again forever:
@@ -193,11 +208,19 @@ void loop() {
       Serial1.print(temperature);      
       Serial1.print(", ");
       Serial1.println(humidity);
+      Serial1.print(", ");      
 #else
       Serial.print(temperature);      
       Serial.print(", ");
-      Serial.println(humidity);
-#endif             
+      Serial.print(humidity);
+      Serial.print(", ");      
+#endif    
+
+#ifdef DEBUG_MODE_DISABLED       
+      Serial1.println(batt_lvl); 
+#else
+      Serial.println(batt_lvl);         
+#endif           
       
       previous_time = current_time;
       digitalWrite(led, LOW);  // turn the LED off by making the voltage LOW
@@ -209,10 +232,47 @@ void loop() {
       // Update slow sensor values
       pressure = BARO.readPressure();
       temperature = HTS.readTemperature();
-      humidity    = HTS.readHumidity();
+      humidity = HTS.readHumidity();
+      batt_lvl = get_batt_lvl();
       
       previous_time_2 = current_time_2;
       digitalWrite(led, LOW);  // turn the LED off by making the voltage LOW      
   }
-    
+}
+
+// fnc: get_batt_lvl
+// gets: none
+// returns: float
+// desc: read raw batt adc and convert to batt voltage
+// R1 / R2 is 0.219 ratio for divider, read voltage on R2 (0.82) and not R1 (0.18)
+// So if scale 1023 * 0.82 = 839
+// 4.2V <=> 839, 3.0 <=> 599
+// (4.2-3) / (839-599) = 0.005
+// y = mx + b
+// where m = 0.005
+// b = y - mx
+// So let y = 4.2, x = 839, m = m = 0.005
+// b = 4.2 - (0.005 * 839) = -0.005
+// y = 0.005*x - 0.005
+// Also clamp ADC to vbatt, if < 599 set vbatt to 0, if > 839 set vbatt to 4.2
+// Test:
+// y = 4.2 when x = 839 PASS
+// Test:
+// y = 3.0 when x = 599 PASS  
+// So let R1 = 1.8k and R2 = 8.2k @ 1%
+// Measure drop across R2
+float get_batt_lvl(void)
+{
+  int battery = analogRead(ANALOG_IN_VBATT);
+  if ( battery < 599 ) {
+    return 0;
   }
+  else if ( battery > 839 ) {
+    return 4.2;
+  }
+  else {  
+    float calc_1 = EQ_1_M * battery;
+    float ret_val = calc_1 + EQ_2_B;
+    return ret_val; 
+  }
+}
