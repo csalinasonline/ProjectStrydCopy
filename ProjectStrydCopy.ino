@@ -1,6 +1,7 @@
 
 #include <Arduino_LSM9DS1.h>
 #include <Arduino_LPS22HB.h>
+#include <Arduino_HTS221.h>
 
 #define TIMEOUT 10
 
@@ -10,6 +11,8 @@ unsigned long previous_time;
 float accl_x, accl_y, accl_z;
 float gyro_x, gyro_y, gyro_z;
 float pressure;
+float temperature;
+float humidity;
 
 // the setup routine runs once when you press reset:
 void setup() {
@@ -41,10 +44,18 @@ void setup() {
   }
   Serial.println("[INIT CHECK], Pressure, Pressure sensor initialized.");
   Serial1.println("[VAL CHECK], Pressure, Pressure units: kPA");   
+
+  if (!HTS.begin()) {
+    Serial.println("[INIT CHECK], TempHumid, TempHumid sensor not initialized.");
+    while (1);
+  }
+  Serial.println("[INIT CHECK], TempHumid, TempHumid sensor initialized.");
+  Serial1.println("[VAL CHECK], Temp, Temp units: C");  
+  Serial1.println("[VAL CHECK], Humidity, Humidity units: %");  
   
   Serial1.println("[HEADER INFO]");  
-  Serial1.println("time, accl_x, accl_y, accl_z, gyro_x, gyro_y, gyro_z, pressure"); 
-
+  Serial1.println("time, accl_x, accl_y, accl_z, gyro_x, gyro_y, gyro_z, pressure, temp, humidity"); 
+  
   // Setup timer
   current_time = millis();
   previous_time = current_time;
@@ -82,8 +93,16 @@ void loop() {
       Serial1.print(", ");
 
       pressure = BARO.readPressure();
-      Serial1.println(pressure);
-       
+      Serial1.print(pressure);
+
+      Serial1.print(", ");
+
+      temperature = HTS.readTemperature();
+      humidity    = HTS.readHumidity();
+      Serial1.print(temperature);      
+      Serial1.print(", ");
+      Serial1.println(humidity);      
+      
       previous_time = current_time;
       digitalWrite(led, LOW);  // turn the LED off by making the voltage LOW
     }
