@@ -4,11 +4,14 @@
 #include <Arduino_HTS221.h>
 
 #define TIMEOUT 10
+#define TIMEOUT_2 1000
 //#define DEBUG_MODE_DISABLED
 
 int led = 13;
 unsigned long current_time;
 unsigned long previous_time;
+unsigned long current_time_2;
+unsigned long previous_time_2;
 float accl_x, accl_y, accl_z;
 float gyro_x, gyro_y, gyro_z;
 float pressure;
@@ -108,11 +111,20 @@ void setup() {
   // Setup timer
   current_time = millis();
   previous_time = current_time;
+  current_time_2 = millis();
+  previous_time_2 = current_time_2;  
+
+  // Read slow sensors before loop
+  pressure = BARO.readPressure();
+  temperature = HTS.readTemperature();
+  humidity    = HTS.readHumidity();
 }
 
 // the loop routine runs over and over again forever:
 void loop() {
   current_time = millis();
+  current_time_2 = millis();
+  
   if ( abs(current_time - previous_time) >= TIMEOUT ) {
       digitalWrite(led, HIGH);   // turn the LED on (HIGH is the voltage level)
 
@@ -169,7 +181,6 @@ void loop() {
       Serial.print(", ");
 #endif       
 
-      pressure = BARO.readPressure();
 #ifdef DEBUG_MODE_DISABLED       
       Serial1.print(pressure);
       Serial1.print(", ");
@@ -178,8 +189,6 @@ void loop() {
       Serial.print(", ");
 #endif       
 
-      temperature = HTS.readTemperature();
-      humidity    = HTS.readHumidity();
 #ifdef DEBUG_MODE_DISABLED       
       Serial1.print(temperature);      
       Serial1.print(", ");
@@ -193,4 +202,17 @@ void loop() {
       previous_time = current_time;
       digitalWrite(led, LOW);  // turn the LED off by making the voltage LOW
     }
+
+  if ( abs(current_time_2 - previous_time_2) >= TIMEOUT_2 ) {
+      digitalWrite(led, HIGH);   // turn the LED on (HIGH is the voltage level)
+
+      // Update slow sensor values
+      pressure = BARO.readPressure();
+      temperature = HTS.readTemperature();
+      humidity    = HTS.readHumidity();
+      
+      previous_time_2 = current_time_2;
+      digitalWrite(led, LOW);  // turn the LED off by making the voltage LOW      
+  }
+    
   }
