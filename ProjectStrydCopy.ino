@@ -3,8 +3,8 @@
 #include <Arduino_LPS22HB.h>
 #include <Arduino_HTS221.h>
 
-#define TIMEOUT 10
-#define TIMEOUT_2 1000
+#define TIMEOUT 20UL
+#define TIMEOUT_2 1000UL
 //#define DEBUG_MODE_DISABLED
 #define EQ_1_M 0.005f
 #define EQ_2_B -0.005f
