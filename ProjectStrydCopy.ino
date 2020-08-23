@@ -5,7 +5,7 @@
 
 #define TIMEOUT 20UL
 #define TIMEOUT_2 1000UL
-//#define DEBUG_MODE_DISABLED
+#define DEBUG_MODE_DISABLED
 #define EQ_1_M 0.005f
 #define EQ_2_B -0.005f
 #define ANALOG_IN_VBATT A0
@@ -53,16 +53,16 @@ void setup() {
 #endif   
 
 #ifdef DEBUG_MODE_DISABLED  
-  Serial1.println("[VAL CHECK], IMU, ACCL sample rate: ");
+  Serial1.print("[VAL CHECK], IMU, ACCL sample rate: ");
   Serial1.print(IMU.accelerationSampleRate());
   Serial1.println(" Hz");
-  Serial1.println("[VAL CHECK], IMU, ACCL units: G's");   
-  Serial1.println("[VAL CHECK], IMU, GYRO sample rate: ");
+  Serial1.println("[VAL CHECK], IMU, ACCL units: G");   
+  Serial1.print("[VAL CHECK], IMU, GYRO sample rate: ");
   Serial1.print(IMU.gyroscopeSampleRate());
   Serial1.println(" Hz");
   Serial1.println("[VAL CHECK], IMU, GYRO units: deg/sec");   
 #else    
-  Serial.println("[VAL CHECK], IMU, ACCL sample rate: ");
+  Serial.print("[VAL CHECK], IMU, ACCL sample rate: ");
   Serial.print(IMU.accelerationSampleRate());
   Serial.println(" Hz");
   Serial.println("[VAL CHECK], IMU, ACCL units: G's");   
@@ -207,7 +207,7 @@ void loop() {
 #ifdef DEBUG_MODE_DISABLED       
       Serial1.print(temperature);      
       Serial1.print(", ");
-      Serial1.println(humidity);
+      Serial1.print(humidity);
       Serial1.print(", ");      
 #else
       Serial.print(temperature);      
