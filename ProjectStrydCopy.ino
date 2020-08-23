@@ -76,8 +76,14 @@ void loop() {
         Serial1.print(", ");
         Serial1.print(gyro_y);
         Serial1.print(", ");
-      Serial1.println(gyro_z);
+        Serial1.print(gyro_z);
       }
+
+      Serial1.print(", ");
+
+      pressure = BARO.readPressure();
+      Serial1.println(pressure);
+       
       previous_time = current_time;
       digitalWrite(led, LOW);  // turn the LED off by making the voltage LOW
     }
