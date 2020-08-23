@@ -1,7 +1,13 @@
 
 #include <Arduino_LSM9DS1.h>
- 
+
+#define TIMEOUT 10
+
 int led = 13;
+unsigned long current_time;
+unsigned long previous_time;
+float accl_x, accl_y, accl_z;
+float gyro_x, gyro_y, gyro_z;
 
 // the setup routine runs once when you press reset:
 void setup() {
@@ -28,40 +34,41 @@ void setup() {
   Serial1.println("[VAL CHECK], IMU, GYRO units: deg/sec");  
   Serial1.println("[HEADER INFO]");  
   Serial1.println("time, accl_x, accl_y, accl_z, gyro_x, gyro_y, gyro_z");  
+
+  // Setup timer
+  current_time = millis();
+  previous_time = current_time;
 }
 
 // the loop routine runs over and over again forever:
 void loop() {
-  float accl_x, accl_y, accl_z;
-  float gyro_x, gyro_y, gyro_z;
+  current_time = millis();
+  if ( abs(current_time - previous_time) >= TIMEOUT ) {
+    digitalWrite(led, HIGH);   // turn the LED on (HIGH is the voltage level)
   
-  digitalWrite(led, HIGH);   // turn the LED on (HIGH is the voltage level)
-
-  Serial1.print(millis());
-  Serial1.print(", ");
+    Serial1.print(millis());
+    Serial1.print(", ");
+    
+    if (IMU.accelerationAvailable()) {
+      IMU.readAcceleration(accl_x, accl_y, accl_z);
+      Serial1.print(accl_x);
+      Serial1.print(", ");
+      Serial1.print(accl_y);
+      Serial1.print(", ");
+      Serial1.print(accl_z);
+    }
   
-  if (IMU.accelerationAvailable()) {
-    IMU.readAcceleration(accl_x, accl_y, accl_z);
-    Serial1.print(accl_x);
     Serial1.print(", ");
-    Serial1.print(accl_y);
-    Serial1.print(", ");
-    Serial1.print(accl_z);
+    
+    if (IMU.gyroscopeAvailable()) {
+      IMU.readGyroscope(gyro_x, gyro_y, gyro_z);
+      Serial1.print(gyro_x);
+      Serial1.print(", ");
+      Serial1.print(gyro_y);
+      Serial1.print(", ");
+      Serial1.println(gyro_z);
+    }
+    previous_time = current_time;
+    digitalWrite(led, LOW);  // turn the LED off by making the voltage LOW
   }
-
-  Serial1.print(", ");
-  
-  if (IMU.gyroscopeAvailable()) {
-    IMU.readGyroscope(gyro_x, gyro_y, gyro_z);
-    Serial1.print(gyro_x);
-    Serial1.print(", ");
-    Serial1.print(gyro_y);
-    Serial1.print(", ");
-    Serial1.println(gyro_z);
-  }
-
-  digitalWrite(led, LOW);  // turn the LED off by making the voltage LOW
-  delay(10);               // wait for a bit
-  
-  
 }
