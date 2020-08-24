@@ -4,6 +4,7 @@
 #include <Arduino_LPS22HB.h>
 #include <Arduino_HTS221.h>
 #include <Arduino_LSM9DS1.h>
+#include <Arduino_APDS9960.h>
 #include <PDM.h>
 
 // Defines
@@ -31,6 +32,9 @@ float batt_lvl;
 short sampleBuffer[256];
 // number of samples read
 volatile int samplesRead;
+int proximity = 0;
+int r = 0, g = 0, b = 0;
+char gesture = '*';
 
 // Prototypes
 float get_batt_lvl(void);
@@ -132,7 +136,6 @@ void setup() {
   Serial.println("[VAL CHECK], INT_ADC, vbatt units: V"); 
 #endif
 
-
   // configure the data receive callback
   PDM.onReceive(on_pdm_data);
   // initialize PDM with:
@@ -154,12 +157,32 @@ void setup() {
   Serial.println("[VAL CHECK], PDM, PDM units: counts 16bit");   
 #endif
 
+  if (!APDS.begin()) {
+#ifdef DEBUG_MODE_DISABLED      
+    Serial1.println("[INIT CHECK], APDS9960, APDS9960 sensor not initialized.");
+#else
+    Serial.println("[INIT CHECK], APDS9960, APDS9960 sensor not initialized.");
+#endif 
+    while (1); 
+  }
+#ifdef DEBUG_MODE_DISABLED     
+  Serial1.println("[INIT CHECK], APDS9960, APDS9960 sensor initialized.");  
+  Serial1.println("[VAL CHECK], APDS9960, APDS9960 proximity units: counts"); 
+  Serial1.println("[VAL CHECK], APDS9960, APDS9960 gesture units: U,D,L,R")
+  Serial1.println("[VAL CHECK], APDS9960, APDS9960 RGB units: counts");   
+#else
+  Serial.println("[INIT CHECK], APDS9960, APDS9960 sensor initialized.");
+  Serial.println("[VAL CHECK], APDS9960, APDS9960 proximity units: counts");  
+  Serial.println("[VAL CHECK], APDS9960, APDS9960 gesture units: U,D,L,R"); 
+  Serial.println("[VAL CHECK], APDS9960, APDS9960 RGB units: counts");   
+#endif
+
 #ifdef DEBUG_MODE_DISABLED     
   Serial1.println("[HEADER INFO]");  
-  Serial1.println("time, accl_x, accl_y, accl_z, gyro_x, gyro_y, gyro_z, pressure, temp, humidity, vbatt, mag_x, mag_y, mag_z, microphone"); 
+  Serial1.println("time, accl_x, accl_y, accl_z, gyro_x, gyro_y, gyro_z, pressure, temp, humidity, vbatt, mag_x, mag_y, mag_z, microphone, proximity, gesture, color_r, color_g, color_b"); 
 #else
   Serial.println("[HEADER INFO]");  
-  Serial.println("time, accl_x, accl_y, accl_z, gyro_x, gyro_y, gyro_z, pressure, temp, humidity, vbatt, mag_x, mag_y, mag_z, microphone"); 
+  Serial.println("time, accl_x, accl_y, accl_z, gyro_x, gyro_y, gyro_z, pressure, temp, humidity, vbatt, mag_x, mag_y, mag_z, microphone, proximity, gesture, color_r, color_g, color_b "); 
 #endif
   
   // Setup timer
@@ -292,10 +315,55 @@ void loop() {
 #endif 
            
 #ifdef DEBUG_MODE_DISABLED     
-    Serial1.println(sampleBuffer[0]);
+    Serial1.print(sampleBuffer[0]);
 #else
-    Serial.println(sampleBuffer[0]);
+    Serial.print(sampleBuffer[0]);
 #endif    
+
+#ifdef DEBUG_MODE_DISABLED     
+      Serial1.print(", ");
+#else
+      Serial.print(", ");
+#endif       
+      
+#ifdef DEBUG_MODE_DISABLED         
+        Serial1.print(proximity);
+#else
+        Serial.print(proximity);
+#endif         
+
+#ifdef DEBUG_MODE_DISABLED     
+      Serial1.print(", ");
+#else
+      Serial.print(", ");
+#endif       
+      
+#ifdef DEBUG_MODE_DISABLED         
+        Serial1.print(gesture);
+#else
+        Serial.print(gesture);
+#endif
+
+#ifdef DEBUG_MODE_DISABLED     
+      Serial1.print(", ");
+#else
+      Serial.print(", ");
+#endif       
+      
+#ifdef DEBUG_MODE_DISABLED         
+        Serial1.print(r);
+        Serial1.print(", ");
+        Serial1.print(g);
+        Serial1.print(", ");
+        Serial1.println(b);
+#else
+        Serial.print(r);
+        Serial.print(", ");
+        Serial.print(g);
+        Serial.print(", ");
+        Serial.println(b);              
+#endif    
+       
       previous_time = current_time;
       digitalWrite(led, LOW);  // turn the LED off by making the voltage LOW
     }
@@ -308,6 +376,37 @@ void loop() {
       temperature = HTS.readTemperature();
       humidity = HTS.readHumidity();
       batt_lvl = get_batt_lvl();
+
+      if (APDS.proximityAvailable()) {
+        proximity = APDS.readProximity();
+      }
+
+      // check if a gesture reading is available
+      if (APDS.gestureAvailable()) {
+        int gestures = APDS.readGesture();
+        switch (gestures) {
+          case GESTURE_UP:
+            gesture = 'U';
+            break;
+          case GESTURE_DOWN:
+            gesture = 'D';
+            break;
+          case GESTURE_LEFT:
+            gesture = 'L';          
+            break;
+          case GESTURE_RIGHT:
+            gesture = 'R';          
+            break;
+          default:
+            // ignore
+            break;
+        }
+      }  
+
+            // check if a color reading is available
+      if (APDS.colorAvailable()) {
+        APDS.readColor(r, g, b);
+      }
       
       previous_time_2 = current_time_2;
       digitalWrite(led, LOW);  // turn the LED off by making the voltage LOW      
