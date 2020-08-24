@@ -2,8 +2,9 @@
 #include <Arduino_LSM9DS1.h>
 #include <Arduino_LPS22HB.h>
 #include <Arduino_HTS221.h>
+#include <Arduino_LSM9DS1.h>
 
-#define TIMEOUT 20UL
+#define TIMEOUT 200UL
 #define TIMEOUT_2 1000UL
 //#define DEBUG_MODE_DISABLED
 #define EQ_1_M 0.005f
@@ -17,6 +18,7 @@ unsigned long current_time_2;
 unsigned long previous_time_2;
 float accl_x, accl_y, accl_z;
 float gyro_x, gyro_y, gyro_z;
+float mag_x, mag_y, mag_z;
 float pressure;
 float temperature;
 float humidity;
@@ -60,7 +62,10 @@ void setup() {
   Serial1.print("[VAL CHECK], IMU, GYRO sample rate: ");
   Serial1.print(IMU.gyroscopeSampleRate());
   Serial1.println(" Hz");
-  Serial1.println("[VAL CHECK], IMU, GYRO units: deg/sec");   
+  Serial1.println("[VAL CHECK], IMU, GYRO units: deg/sec");  
+  Serial1.print(IMU.magneticFieldSampleRate());
+  Serial1.println(" Hz");
+  Serial1.println("[VAL CHECK], IMU, MAG units: uT");    
 #else    
   Serial.print("[VAL CHECK], IMU, ACCL sample rate: ");
   Serial.print(IMU.accelerationSampleRate());
@@ -70,6 +75,9 @@ void setup() {
   Serial.print(IMU.gyroscopeSampleRate());
   Serial.println(" Hz");
   Serial.println("[VAL CHECK], IMU, GYRO units: deg/sec");
+  Serial.print(IMU.magneticFieldSampleRate());
+  Serial.println(" Hz");
+  Serial.println("[VAL CHECK], IMU, MAG units: uT");  
 #endif
 
   if (!BARO.begin()) {
@@ -217,10 +225,33 @@ void loop() {
 #endif    
 
 #ifdef DEBUG_MODE_DISABLED       
-      Serial1.println(batt_lvl); 
+      Serial1.print(batt_lvl); 
 #else
-      Serial.println(batt_lvl);         
-#endif           
+      Serial.print(batt_lvl);         
+#endif   
+
+#ifdef DEBUG_MODE_DISABLED     
+      Serial1.print(", ");
+#else
+      Serial.print(", ");
+#endif       
+      
+      if (IMU.magneticFieldAvailable()) {
+        IMU.readMagneticField(mag_x, mag_y, mag_z);
+#ifdef DEBUG_MODE_DISABLED         
+        Serial1.print(mag_x);
+        Serial1.print(", ");
+        Serial1.print(mag_y);
+        Serial1.print(", ");
+        Serial1.print(mag_z);
+#else
+        Serial.print(mag_x);
+        Serial.print(", ");
+        Serial.print(mag_y);
+        Serial.print(", ");
+        Serial.println(mag_z);
+#endif         
+      }        
       
       previous_time = current_time;
       digitalWrite(led, LOW);  // turn the LED off by making the voltage LOW
