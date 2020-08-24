@@ -5,7 +5,7 @@
 
 #define TIMEOUT 20UL
 #define TIMEOUT_2 1000UL
-#define DEBUG_MODE_DISABLED
+//#define DEBUG_MODE_DISABLED
 #define EQ_1_M 0.005f
 #define EQ_2_B -0.005f
 #define ANALOG_IN_VBATT A0
