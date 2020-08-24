@@ -124,10 +124,10 @@ void setup() {
 
 #ifdef DEBUG_MODE_DISABLED     
   Serial1.println("[HEADER INFO]");  
-  Serial1.println("time, accl_x, accl_y, accl_z, gyro_x, gyro_y, gyro_z, pressure, temp, humidity, vbatt"); 
+  Serial1.println("time, accl_x, accl_y, accl_z, gyro_x, gyro_y, gyro_z, pressure, temp, humidity, vbatt, mag_x, mag_y, mag_z"); 
 #else
   Serial.println("[HEADER INFO]");  
-  Serial.println("time, accl_x, accl_y, accl_z, gyro_x, gyro_y, gyro_z, pressure, temp, humidity, vbatt"); 
+  Serial.println("time, accl_x, accl_y, accl_z, gyro_x, gyro_y, gyro_z, pressure, temp, humidity, vbatt, mag_x, mag_y, mag_z"); 
 #endif
   
   // Setup timer
