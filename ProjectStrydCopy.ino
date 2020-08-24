@@ -1,9 +1,12 @@
 
+// Includes
 #include <Arduino_LSM9DS1.h>
 #include <Arduino_LPS22HB.h>
 #include <Arduino_HTS221.h>
 #include <Arduino_LSM9DS1.h>
+#include <PDM.h>
 
+// Defines
 #define TIMEOUT 200UL
 #define TIMEOUT_2 1000UL
 //#define DEBUG_MODE_DISABLED
@@ -11,6 +14,7 @@
 #define EQ_2_B -0.005f
 #define ANALOG_IN_VBATT A0
 
+// Variables
 int led = 13;
 unsigned long current_time;
 unsigned long previous_time;
@@ -23,8 +27,14 @@ float pressure;
 float temperature;
 float humidity;
 float batt_lvl;
+// buffer to read samples into, each sample is 16-bits
+short sampleBuffer[256];
+// number of samples read
+volatile int samplesRead;
 
+// Prototypes
 float get_batt_lvl(void);
+void on_pdm_data(void);
 
 // the setup routine runs once when you press reset:
 void setup() {
@@ -122,12 +132,34 @@ void setup() {
   Serial.println("[VAL CHECK], INT_ADC, vbatt units: V"); 
 #endif
 
+
+  // configure the data receive callback
+  PDM.onReceive(on_pdm_data);
+  // initialize PDM with:
+  // - one channel (mono mode)
+  // - a 16 kHz sample rate  
+  if (!PDM.begin(1, 16000)) {
+#ifdef DEBUG_MODE_DISABLED      
+    Serial1.println("[INIT CHECK], PDM, PDM sensor not initialized.");
+#else
+    Serial.println("[INIT CHECK], PDM, PDM sensor not initialized.");
+#endif 
+    while (1);
+  }
+#ifdef DEBUG_MODE_DISABLED     
+  Serial1.println("[INIT CHECK], PDM, PDM sensor initialized.");
+  Serial1.println("[VAL CHECK], PDM, PDM units: counts 16bit");   
+#else
+  Serial.println("[INIT CHECK], PDM, PDM sensor initialized.");
+  Serial.println("[VAL CHECK], PDM, PDM units: counts 16bit");   
+#endif
+
 #ifdef DEBUG_MODE_DISABLED     
   Serial1.println("[HEADER INFO]");  
-  Serial1.println("time, accl_x, accl_y, accl_z, gyro_x, gyro_y, gyro_z, pressure, temp, humidity, vbatt, mag_x, mag_y, mag_z"); 
+  Serial1.println("time, accl_x, accl_y, accl_z, gyro_x, gyro_y, gyro_z, pressure, temp, humidity, vbatt, mag_x, mag_y, mag_z, microphone"); 
 #else
   Serial.println("[HEADER INFO]");  
-  Serial.println("time, accl_x, accl_y, accl_z, gyro_x, gyro_y, gyro_z, pressure, temp, humidity, vbatt, mag_x, mag_y, mag_z"); 
+  Serial.println("time, accl_x, accl_y, accl_z, gyro_x, gyro_y, gyro_z, pressure, temp, humidity, vbatt, mag_x, mag_y, mag_z, microphone"); 
 #endif
   
   // Setup timer
@@ -249,10 +281,21 @@ void loop() {
         Serial.print(", ");
         Serial.print(mag_y);
         Serial.print(", ");
-        Serial.println(mag_z);
+        Serial.print(mag_z);
 #endif         
-      }        
-      
+      }   
+
+#ifdef DEBUG_MODE_DISABLED     
+      Serial1.print(", ");
+#else
+      Serial.print(", ");
+#endif 
+           
+#ifdef DEBUG_MODE_DISABLED     
+    Serial1.println(sampleBuffer[0]);
+#else
+    Serial.println(sampleBuffer[0]);
+#endif    
       previous_time = current_time;
       digitalWrite(led, LOW);  // turn the LED off by making the voltage LOW
     }
@@ -306,4 +349,15 @@ float get_batt_lvl(void)
     float ret_val = calc_1 + EQ_2_B;
     return ret_val; 
   }
+}
+
+void on_pdm_data(void) {
+  // query the number of bytes available
+  int bytesAvailable = PDM.available();
+
+  // read into the sample buffer
+  PDM.read(sampleBuffer, bytesAvailable);
+
+  // 16-bit, 2 bytes per sample
+  samplesRead = bytesAvailable / 2;
 }
