@@ -26,6 +26,8 @@ float get_batt_lvl(void);
 
 // the setup routine runs once when you press reset:
 void setup() {
+  delay(300);
+   
   // initialize the IO
   pinMode(led, OUTPUT);
 
