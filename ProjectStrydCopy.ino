@@ -50,7 +50,9 @@ void setup() {
   Serial1.println("[INIT CHECK], IMU, IMU initialized.");
 #else  
   Serial.println("[INIT CHECK], IMU, IMU initialized.");
-#endif   
+#endif  
+
+ delay(100);
 
 #ifdef DEBUG_MODE_DISABLED  
   Serial1.print("[VAL CHECK], IMU, ACCL sample rate: ");
@@ -88,6 +90,8 @@ void setup() {
   Serial.println("[VAL CHECK], Pressure, Pressure units: kPA");   
 #endif  
 
+ delay(100);
+
   if (!HTS.begin()) {
 #ifdef DEBUG_MODE_DISABLED      
     Serial1.println("[INIT CHECK], TempHumid, TempHumid sensor not initialized.");
@@ -105,6 +109,8 @@ void setup() {
   Serial.println("[VAL CHECK], Temp, Temp units: C");  
   Serial.println("[VAL CHECK], Humidity, Humidity units: %");  
 #endif
+
+ delay(100);
 
 #ifdef DEBUG_MODE_DISABLED     
   Serial1.println("[INIT CHECK], INT_ADC, INT_ADC vbatt initialized.");
