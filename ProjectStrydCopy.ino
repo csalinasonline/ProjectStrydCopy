@@ -1,5 +1,4 @@
-
-#include <Arduino_LSM9DS1.h>
+#include "LSM9DS1.h"
 #include <Arduino_LPS22HB.h>
 #include <Arduino_HTS221.h>
 
@@ -9,6 +8,17 @@
 #define EQ_1_M 0.005f
 #define EQ_2_B -0.005f
 #define ANALOG_IN_VBATT A0
+
+// Gyro Settings
+#define GYRO_ODR_G_119              0b01111011
+#define GYRO_FS_G_2000              0b11111011
+#define GYRO_BW_G                   0b11111000
+
+// Accel Settings
+#define ACCEL_ODR_XL_119            0b01111111
+#define ACCEL_FS_XL_16G             0b11101111
+#define ACCEL_BW_SCAL_ODR_MODE_ONE  0b11111011
+#define ACCEL_BW_XL_408             0b11111100
 
 int led = 13;
 unsigned long current_time;
@@ -23,6 +33,12 @@ float humidity;
 float batt_lvl;
 
 float get_batt_lvl(void);
+
+#ifdef ARDUINO_ARDUINO_NANO33BLE
+LSM9DS1Class IMU(Wire1);
+#else
+LSM9DS1Class IMU(Wire);
+#endif
 
 // the setup routine runs once when you press reset:
 void setup() {
@@ -39,15 +55,18 @@ void setup() {
   Serial.println("[START]");  
 #endif
 
-  // Check IMU
+  // Check imu
   if (!IMU.begin()) {
 #ifdef DEBUG_MODE_DISABLED 
-    Serial1.println("[INIT CHECK], IMU, IMU not initialized.");
+    Serial1.println("[INIT CHECK], imu, imu not initialized.");
 #else
-    Serial.println("[INIT CHECK], IMU, IMU not initialized.");
+    Serial.println("[INIT CHECK], imu, imu not initialized.");
 #endif    
     while (1);
   }
+  // Modify imu Gyro Settings
+  IMU.writeRegister(LSM9DS1_ADDRESS, LSM9DS1_CTRL_REG1_G, GYRO_ODR_G_119 & GYRO_FS_G_2000 & GYRO_BW_G); // 119 Hz, 2000 dps, 16 Hz BW
+  IMU.writeRegister(LSM9DS1_ADDRESS, LSM9DS1_CTRL_REG6_XL, ACCEL_ODR_XL_119 & ACCEL_FS_XL_16G & ACCEL_BW_SCAL_ODR_MODE_ONE & ACCEL_BW_XL_408); // 119 Hz, 16G
 #ifdef DEBUG_MODE_DISABLED   
   Serial1.println("[INIT CHECK], IMU, IMU initialized.");
 #else  
